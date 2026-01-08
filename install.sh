@@ -11,5 +11,9 @@ sudo make install &&
 sudo apt install libcurl4-openssl-dev &&
 
 #To install <cjson/cJSON.h>
-sudo apt install libcjson-dev
+sudo apt install libcjson-dev && 
+
+#To install pkg-config
+sudo apt install pkg-config
+
 
