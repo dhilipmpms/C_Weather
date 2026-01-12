@@ -394,9 +394,8 @@ int main(int argc, char *argv[])
     }
   }
   
-  // Load fonts
-  const char *fontPath = TextFormat("%sassets/font/PressStart2P-Regular.ttf", basePath);
-  Font customFont = LoadFontEx(fontPath, 60, NULL, 0);
+  // Load fonts - using default font for better readability
+  Font customFont = GetFontDefault();
   Font regularFont = GetFontDefault();
   
   // Initialize animation state
@@ -488,17 +487,31 @@ int main(int argc, char *argv[])
       mainCard.width *= anim.cardScale;
       mainCard.height *= anim.cardScale;
       
-      DrawCard(mainCard, 0.05f, BG_CARD, 0.4f);
+      // Draw shadow for the entire card
+      Rectangle shadowRect = {mainCard.x + 4, mainCard.y + 6, mainCard.width, mainCard.height};
+      DrawRectangleRounded(shadowRect, 0.05f, 16, Fade(BLACK, 0.4f));
       
-      // Draw weather banner with overlay
+      // Draw weather banner with rounded top corners
       if (myData.weatherBanner.id != 0) {
         Rectangle bannerRect = {mainCard.x, mainCard.y, mainCard.width, 200};
         Rectangle srcRect = {0, 0, (float)myData.weatherBanner.width, (float)myData.weatherBanner.height};
-        DrawTexturePro(myData.weatherBanner, srcRect, bannerRect, (Vector2){0, 0}, 0, Fade(WHITE, anim.fadeIn));
         
-        // Dark overlay for better text readability
-        DrawRectangleRounded(bannerRect, 0.05f, 16, Fade((Color){0, 0, 0, 150}, anim.fadeIn));
+        // Draw the banner image with rounded top corners - no fade animation
+        DrawTexturePro(myData.weatherBanner, srcRect, bannerRect, (Vector2){0, 0}, 0, WHITE);
+        
+        // Light overlay for better text readability
+        DrawRectangleRounded(bannerRect, 0.05f, 16, Fade((Color){0, 0, 0, 60}, 0.8f));
       }
+      
+      // Draw the bottom part of the card (below the banner)
+      Rectangle bottomCard = {mainCard.x, mainCard.y + 200, mainCard.width, mainCard.height - 200};
+      DrawRectangle(bottomCard.x, bottomCard.y, bottomCard.width, bottomCard.height, BG_CARD);
+      
+      // Draw rounded bottom corners
+      DrawRectangleRounded((Rectangle){mainCard.x, mainCard.y + mainCard.height - 20, mainCard.width, 20}, 0.5f, 16, BG_CARD);
+      
+      // Draw subtle border around entire card
+      DrawRectangleRoundedLines(mainCard, 0.05f, 16, Fade(WHITE, 0.1f));
       
       // City name and country
       Vector2 cityPos = {mainCard.x + 30, mainCard.y + 30};
@@ -509,12 +522,25 @@ int main(int argc, char *argv[])
       Vector2 descPos = {mainCard.x + 30, mainCard.y + 70};
       DrawTextEx(regularFont, myData.description, descPos, 20, 1, Fade(TEXT_SECONDARY, anim.fadeIn));
       
-      // Temperature (large)
+      // Temperature (large) - Draw with black rounded background
       char tempStr[64];
       snprintf(tempStr, sizeof(tempStr), "%s", myData.temperature);
-      Vector2 tempSize = MeasureTextEx(customFont, tempStr, 72, 2);
+      Vector2 tempSize = MeasureTextEx(customFont, tempStr, 96, 3);
       Vector2 tempPos = {mainCard.x + 30, mainCard.y + 110};
-      DrawTextEx(customFont, tempStr, tempPos, 72, 2, Fade(TEXT_PRIMARY, anim.fadeIn));
+      
+      // Draw black rounded background for temperature with no white corners
+      Rectangle tempBg = {
+        tempPos.x - 15, 
+        tempPos.y - 10, 
+        tempSize.x + 30, 
+        tempSize.y + 20
+      };
+      
+      // Draw filled rounded rectangle with higher segment count for smoother corners
+      DrawRectangleRounded(tempBg, 0.2f, 32, Fade(BLACK, anim.fadeIn * 0.8f));
+      
+      // Draw temperature text
+      DrawTextEx(customFont, tempStr, tempPos, 96, 3, Fade(TEXT_PRIMARY, anim.fadeIn));
       
       // Weather icon with animation
       if (myData.weatherlogo.id != 0) {
@@ -642,7 +668,6 @@ int main(int argc, char *argv[])
   }
 
   // Cleanup
-  UnloadFont(customFont);
   if (myData.weatherBanner.id != 0) UnloadTexture(myData.weatherBanner);
   if (myData.weatherlogo.id != 0) UnloadTexture(myData.weatherlogo);
   CloseWindow();
